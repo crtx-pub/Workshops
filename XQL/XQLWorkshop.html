@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined XQL Query Presentations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
+        
+        :root {
+            --primary-color: #00ff41;
+            --secondary-color: #44FF04;
+            --accent-color: #00d4ff;
+            --warning-color: #ffaa00;
+            --background-color: #000000;
+            --surface-color: #0d0d0d;
+            --card-color: #111111;
+            --text-color: #b0b0b0;
+            --text-bright: #ffffff;
+            --border-color: #333333;
+            --glow-primary: #00ff4150;
+            --glow-secondary: #ff008050;
+            --glow-accent: #00d4ff50;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation Menu */
+        .sidebar {
+            width: 320px;
+            background: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            height: 100vh;
+            overflow-y: auto;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+
+        .menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .menu-category {
+            background: var(--card-color);
+            border-left: 3px solid var(--accent-color);
+            margin: 0.5rem 1rem;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .menu-category:hover {
+            border-left-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--glow-accent);
+        }
+
+        .category-header {
+            padding: 1rem;
+            font-weight: bold;
+            color: var(--text-bright);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .category-toggle {
+            color: var(--warning-color);
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-category.open .category-toggle {
+            transform: rotate(90deg);
+        }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: var(--background-color);
+        }
+
+        .menu-category.open .submenu {
+            max-height: 1000px;
+        }
+
+        .submenu-item {
+            padding: 0.7rem 1rem 0.7rem 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            color: var(--text-color);
+            font-size: 0.85rem;
+        }
+
+        .submenu-item:hover,
+        .submenu-item.active {
+            background: var(--card-color);
+            border-left-color: var(--secondary-color);
+            color: var(--text-bright);
+            box-shadow: inset 0 0 10px rgba(255, 0, 128, 0.1);
+        }
+
+        /* Main Content Area */
+        .content {
+            margin-left: 320px;
+            margin-right: 0;
+            width: calc(100vw - 320px);
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            transition: margin-right 0.3s ease, width 0.3s ease;
+        }
+
+        .content.with-timer {
+            margin-right: 300px;
+            width: calc(100vw - 620px);
+        }
+
+        /* Timer Sidebar */
+        .timer-sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--card-color), rgba(20, 0, 40, 0.9));
+            border-left: 2px solid var(--primary-color);
+            padding: 2rem 1.5rem;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .timer-sidebar.active {
+            right: 0;
+        }
+
+        .timer-sidebar h3 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .timer-sidebar::before {
+            content: '[ TIMER MODULE ]';
+            position: absolute;
+            top: 1rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--warning-color);
+            text-shadow: 0 0 5px var(--warning-color);
+        }
+
+        /* Animated Cyberpunk Background */
+        .content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                /* Animated grid */
+                linear-gradient(rgba(0, 255, 65, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.1) 1px, transparent 1px),
+                /* Diagonal lines */
+                linear-gradient(45deg, transparent 48%, rgba(0, 212, 255, 0.05) 49%, rgba(0, 212, 255, 0.05) 51%, transparent 52%),
+                /* Circuit patterns */
+                radial-gradient(circle at 25% 25%, rgba(255, 0, 128, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(0, 255, 65, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.06) 0%, transparent 50%);
+            background-size: 
+                60px 60px,
+                60px 60px,
+                120px 120px,
+                400px 400px,
+                600px 600px,
+                800px 800px;
+            animation: 
+                grid-flow 25s linear infinite,
+                circuit-pulse 8s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes grid-flow {
+            0% { 
+                background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+                filter: hue-rotate(0deg);
+            }
+            25% {
+                background-position: 30px 30px, 30px 30px, 60px 60px, 100px 100px, 150px 150px, 200px 200px;
+                filter: hue-rotate(90deg);
+            }
+            50% {
+                background-position: 60px 60px, 60px 60px, 120px 120px, 200px 200px, 300px 300px, 400px 400px;
+                filter: hue-rotate(180deg);
+            }
+            75% {
+                background-position: 90px 90px, 90px 90px, 180px 180px, 300px 300px, 450px 450px, 600px 600px;
+                filter: hue-rotate(270deg);
+            }
+            100% { 
+                background-position: 120px 120px, 120px 120px, 240px 240px, 400px 400px, 600px 600px, 800px 800px;
+                filter: hue-rotate(360deg);
+            }
+        }
+
+        @keyframes circuit-pulse {
+            0% { 
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            100% { 
+                opacity: 1;
+                transform: scale(1.02);
+            }
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .slide.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide-content {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-shadow: 
+                inset 0 0 50px rgba(0, 0, 0, 0.5),
+                0 0 1px var(--primary-color);
+            position: relative;
+            min-height: calc(100vh - 4rem);
+        }
+
+        /* Cyberpunk corner brackets */
+        .slide-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(var(--primary-color), var(--primary-color)) 0 0 / 20px 1px no-repeat,
+                linear-gradient(var(--primary-color), var(--primary-color)) 0 0 / 1px 20px no-repeat,
+                linear-gradient(var(--primary-color), var(--primary-color)) 100% 0 / 20px 1px no-repeat,
+                linear-gradient(var(--primary-color), var(--primary-color)) 100% 0 / 1px 20px no-repeat,
+                linear-gradient(var(--primary-color), var(--primary-color)) 0 100% / 20px 1px no-repeat,
+                linear-gradient(var(--primary-color), var(--primary-color)) 0 100% / 1px 20px no-repeat,
+                linear-gradient(var(--primary-color), var(--primary-color)) 100% 100% / 20px 1px no-repeat,
+                linear-gradient(var(--primary-color), var(--primary-color)) 100% 100% / 1px 20px no-repeat;
+            pointer-events: none;
+            animation: corner-glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes corner-glow {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--text-bright);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 0 1rem 0;
+            position: relative;
+            text-shadow: 
+                0 0 5px var(--primary-color),
+                0 0 10px var(--primary-color);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+        }
+
+        h1::after, h2::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, var(--primary-color), transparent);
+            animation: underline-glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes underline-glow {
+            0% { 
+                box-shadow: 0 0 5px var(--primary-color);
+                opacity: 0.7;
+            }
+            100% { 
+                box-shadow: 0 0 15px var(--primary-color);
+                opacity: 1;
+            }
+        }
+
+        pre {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            font-family: 'Share Tech Mono', monospace;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            margin: 1rem 0;
+        }
+
+        pre::before {
+            content: '> TERMINAL_OUTPUT';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            background: var(--card-color);
+            color: var(--primary-color);
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+            counter-reset: item;
+        }
+
+        li {
+            position: relative;
+            padding-left: 3rem;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            color: var(--text-color);
+            border-left: 1px solid var(--border-color);
+            padding-left: 2rem;
+            margin-left: 1rem;
+        }
+
+        li::before {
+            counter-increment: item;
+            content: "[" counter(item, decimal-leading-zero) "]";
+            position: absolute;
+            left: -1rem;
+            top: 0;
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 0.8rem;
+            background: var(--background-color);
+            padding: 0 4px;
+        }
+
+        li:hover {
+            border-left-color: var(--primary-color);
+            color: var(--text-bright);
+        }
+
+        li:hover::before {
+            color: var(--secondary-color);
+            text-shadow: 0 0 5px var(--secondary-color);
+        }
+
+        .info-block {
+            background: var(--card-color);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-color);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .info-block:hover {
+            border-left-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--glow-accent);
+        }
+
+        .info-block h3 {
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .info-block p {
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Cyberpunk Syntax Highlighting */
+        .xql-keyword {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .xql-operator {
+            color: var(--text-bright);
+            font-weight: bold;
+        }
+
+        .xql-field {
+            color: var(--accent-color);
+        }
+
+        .xql-value {
+            color: var(--secondary-color);
+        }
+
+        .xql-alias {
+            color: var(--warning-color);
+        }
+
+        .title-image-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 1rem auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            overflow: hidden;
+            background: var(--card-color);
+        }
+
+        .logos-container {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            right: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo {
+            height: 30px;
+            width: auto;
+            opacity: 0.8;
+            filter: brightness(0.8);
+        }
+
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            background: var(--card-color);
+            position: relative;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .timer-container::before {
+            content: '[ TIMER MODULE ]';
+            position: absolute;
+            top: -10px;
+            left: 1rem;
+            background: var(--card-color);
+            color: var(--warning-color);
+            padding: 0 8px;
+            font-size: 0.7rem;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .timer-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .timer-button {
+            background: var(--surface-color);
+            color: var(--text-bright);
+            font-weight: bold;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .timer-button:hover {
+            border-color: var(--secondary-color);
+            color: var(--secondary-color);
+            box-shadow: 0 0 5px var(--glow-secondary);
+        }
+
+        .timer-button:disabled {
+            background: var(--card-color);
+            color: var(--border-color);
+            cursor: not-allowed;
+            border-color: var(--border-color);
+        }
+
+        .timer-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: bold;
+            min-width: 150px;
+            text-align: center;
+            transition: all 0.3s ease;
+            color: var(--text-bright);
+            background: var(--background-color);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .timer-green {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--glow-primary);
+        }
+        
+        .timer-yellow {
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+        
+        .timer-red {
+            color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 10px var(--glow-secondary);
+            animation: timer-urgent 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes timer-urgent {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .select-timer {
+            background: var(--surface-color);
+            color: var(--text-bright);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .select-timer:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px var(--glow-primary);
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, 1fr);
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .text-3xl {
+            font-size: 1.875rem;
+        }
+
+        .text-5xl {
+            font-size: 3rem;
+        }
+
+        .text-6xl {
+            font-size: 3.75rem;
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .credit-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .text-cyan-400 {
+            color: var(--accent-color);
+        }
+
+        .text-pink-400 {
+            color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <h2>XQL Presentations Menu</h2>
+        <ul class="menu">
+            <!-- Cortex XDR Datasets Overview -->
+            <li class="menu-category">
+                <div class="category-header">
+                    Cortex XDR Datasets Overview
+                    <span class="category-toggle">▶</span>
+                </div>
+                <ul class="submenu">
+                    <li class="submenu-item" data-slide="0">Title & Introduction</li>
+                    <li class="submenu-item" data-slide="1">What Are XDR Datasets?</li>
+                    <li class="submenu-item" data-slide="2">Core Security Datasets</li>
+                    <li class="submenu-item" data-slide="3">Asset Management Datasets</li>
+                    <li class="submenu-item" data-slide="4">Vulnerability Management Datasets</li>
+                    <li class="submenu-item" data-slide="5">Cloud Security Datasets</li>
+                    <li class="submenu-item" data-slide="6">Data Security Posture Management</li>
+                    <li class="submenu-item" data-slide="7">Cloud Infrastructure Entitlement Management</li>
+                    <li class="submenu-item" data-slide="8">Classification & Compliance</li>
+                    <li class="submenu-item" data-slide="9">Dataset Relationships & Joins</li>
+                    <li class="submenu-item" data-slide="10">Best Practices for Dataset Usage</li>
+                    <li class="submenu-item" data-slide="11">Dataset Summary & Next Steps</li>
+                </ul>
+            </li>
+            <!-- Container Image Risk Scoring Presentation -->
+            <li class="menu-category">
+                <div class="category-header">
+                    Container Image Risk Scoring
+                    <span class="category-toggle">▶</span>
+                </div>
+                <ul class="submenu">
+                    <li class="submenu-item" data-slide="12">Title Slide</li>
+                    <li class="submenu-item" data-slide="13">Agenda</li>
+                    <li class="submenu-item" data-slide="14">Core XQL Stages (Part 1)</li>
+                    <li class="submenu-item" data-slide="15">Core XQL Stages (Part 2)</li>
+                    <li class="submenu-item" data-slide="16">Essential XQL Functions</li>
+                    <li class="submenu-item" data-slide="17">Part 1: Initial Data & Filtering - Tasks</li>
+                    <li class="submenu-item" data-slide="18">Part 1: Initial Data & Filtering - Solution</li>
+                    <li class="submenu-item" data-slide="19">Part 2: Time Grouping & Dashboard Filters - Tasks</li>
+                    <li class="submenu-item" data-slide="20">Part 2: Time Grouping & Dashboard Filters - Solution</li>
+                    <li class="submenu-item" data-slide="21">Part 3: Joining with Vulnerability Data - Tasks</li>
+                    <li class="submenu-item" data-slide="22">Part 3: Joining with Vulnerability Data - Solution</li>
+                    <li class="submenu-item" data-slide="23">Part 4: Final Join & Malware Scoring - Tasks</li>
+                    <li class="submenu-item" data-slide="24">Part 4: Final Join & Malware Scoring - Solution</li>
+                    <li class="submenu-item" data-slide="25">Your Query Analysis: Malware Risk Enhancement - Tasks</li>
+                    <li class="submenu-item" data-slide="26">Your Query Analysis: Business Impact</li>
+                    <li class="submenu-item" data-slide="27">Complete XQL Query</li>
+                    <li class="submenu-item" data-slide="28">Workshop Summary</li>
+                    <li class="submenu-item" data-slide="29">Thank You & Next Steps</li>
+                    <li class="submenu-item" data-slide="16">Workshop Summary</li>
+                    <li class="submenu-item" data-slide="17">Thank You & Next Steps</li>
+                </ul>
+            </li>
+            <!-- Kubernetes Pods with Vulnerabilities Presentation -->
+            <li class="menu-category">
+                <div class="category-header">
+                    Kubernetes Pods with Vulnerabilities
+                    <span class="category-toggle">▶</span>
+                </div>
+                <ul class="submenu">
+                    <li class="submenu-item" data-slide="18">Title: Kubernetes Vulnerability Analysis</li>
+                    <li class="submenu-item" data-slide="19">Kubernetes Workshop Agenda</li>
+                    <li class="submenu-item" data-slide="20">Kubernetes Data Sources</li>
+                    <li class="submenu-item" data-slide="21">Part 1: Kubernetes Workload Discovery - Tasks</li>
+                    <li class="submenu-item" data-slide="22">Part 1: Kubernetes Workload Discovery - Solution</li>
+                    <li class="submenu-item" data-slide="23">Part 2: Image Vulnerability Correlation - Tasks</li>
+                    <li class="submenu-item" data-slide="24">Part 2: Image Vulnerability Correlation - Solution</li>
+                    <li class="submenu-item" data-slide="25">Part 3: Risk Scoring & Prioritization - Tasks</li>
+                    <li class="submenu-item" data-slide="26">Part 3: Risk Scoring & Prioritization - Solution</li>
+                    <li class="submenu-item" data-slide="27">Part 4: Complete Analysis Solution</li>
+                    <li class="submenu-item" data-slide="28">Advanced Kubernetes Security Techniques</li>
+                    <li class="submenu-item" data-slide="29">Kubernetes Analysis Business Impact</li>
+                    <li class="submenu-item" data-slide="30">Thank You - Kubernetes Workshop Complete</li>
+                    <li class="submenu-item" data-slide="31">Workshop Summary - Kubernetes Analysis</li>
+                    <li class="submenu-item" data-slide="32">Session Complete</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Timer Sidebar -->
+    <div class="timer-sidebar" id="timer-sidebar">
+        <h3>Session Timer</h3>
+        <div id="timer-content">
+            <!-- Timer will be populated by JavaScript based on current slide -->
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="content">
+        <!-- Cortex XDR Datasets Overview (Slides 0-11) -->
+        
+        <!-- Slide 0: Datasets Title -->
+        <div class="slide" id="slide-0">
+            <div class="slide-content text-center">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h1 class="text-6xl mb-6">CORTEX XDR DATASETS OVERVIEW</h1>
+                <p class="text-xl mb-4">Understanding the Data Foundation for Advanced Security Analytics</p>
+                <div class="info-block">
+                    <h3>What You'll Learn</h3>
+                    <div class="grid grid-cols-2">
+                        <div>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Core security datasets and their purpose</li>
+                                <li>Asset management and inventory datasets</li>
+                                <li>Vulnerability management data sources</li>
+                                <li>Cloud security posture datasets</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Data relationships and join strategies</li>
+                                <li>Best practices for dataset usage</li>
+                                <li>Performance considerations</li>
+                                <li>Real-world application examples</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-center text-xl mt-4" style="color: var(--secondary-color);">Essential foundation for mastering XQL queries</p>
+            </div>
+        </div>
+
+        <!-- Slide 1: What Are XDR Datasets? -->
+        <div class="slide" id="slide-1">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">WHAT ARE XDR DATASETS?</h2>
+                <div class="info-block">
+                    <h3>Dataset Definition</h3>
+                    <p>XDR datasets are structured collections of security data that provide the foundation for advanced threat detection, investigation, and response capabilities within Cortex XDR.</p>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Key Characteristics</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="font-bold">Standardized Schema</span> - Consistent data structure across sources</li>
+                            <li><span class="font-bold">Real-time Updates</span> - Continuously refreshed security intelligence</li>
+                            <li><span class="font-bold">Rich Context</span> - Detailed metadata and relationships</li>
+                            <li><span class="font-bold">Queryable via XQL</span> - Powerful analysis capabilities</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Dataset Categories</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-field">Core Security</span> - Findings, cases, issues</li>
+                            <li><span class="xql-field">Asset Management</span> - Inventory and metadata</li>
+                            <li><span class="xql-field">Vulnerability Data</span> - Risk assessments and scoring</li>
+                            <li><span class="xql-field">Cloud Security</span> - DSPM, CIEM, CWP data</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Why Datasets Matter</h3>
+                    <p>Datasets enable correlation across security domains, providing comprehensive visibility into your security posture and enabling data-driven decision making.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Core Security Datasets -->
+        <div class="slide" id="slide-2">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">CORE SECURITY DATASETS</h2>
+                <div class="info-block">
+                    <h3>Foundation of Security Operations</h3>
+                    <p>These datasets form the backbone of security incident management and response workflows.</p>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">findings</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Primary security findings dataset</span> - Contains security findings from various sources, providing a centralized view of potential risks across your environment.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">findings_revisions</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Finding change tracking</span> - Tracks revisions and updates made to findings over time, enabling audit trails and trend analysis.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">cases</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Security case management</span> - Stores information about security cases created to manage and investigate related findings.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">issues</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Issue tracking system</span> - Contains information about issues created to track and manage related findings and remediation efforts.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Asset Management Datasets -->
+        <div class="slide" id="slide-3">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">ASSET MANAGEMENT DATASETS</h2>
+                <div class="info-block">
+                    <h3>Comprehensive Asset Visibility</h3>
+                    <p>These datasets provide complete visibility into your organization's digital assets and their security posture.</p>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">asset_inventory</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Complete asset catalog</span> - Comprehensive inventory of all assets in your environment including servers, containers, cloud resources, and network devices.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">issue_to_asset</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Issue-asset relationships</span> - Maps security issues to the specific assets they are associated with, enabling targeted remediation.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">issue_to_finding</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Issue-finding correlation</span> - Maps security issues to their corresponding findings, providing traceability and context.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">case_to_issue</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Case-issue mapping</span> - Maps security cases to the issues they contain, supporting hierarchical incident management.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Vulnerability Management Datasets -->
+        <div class="slide" id="slide-4">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">VULNERABILITY MANAGEMENT DATASETS</h2>
+                <div class="info-block">
+                    <h3>Risk-Based Vulnerability Intelligence</h3>
+                    <p>Advanced vulnerability data with context, scoring, and prioritization capabilities.</p>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">uvm_findings</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Unified Vulnerability Management</span> - Contains comprehensive vulnerability findings with CVSS scores, exploitability data, and risk context from the UVM module.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">scans_management</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Scan orchestration data</span> - Contains information about security scan management, scheduling, and execution across your infrastructure.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">cwp_packages_raw</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Cloud Workload Protection packages</span> - Raw data about packages and software components in your Cloud Workload Protection environment for vulnerability analysis.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Key Use Cases</h3>
+                    <div class="grid grid-cols-2">
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li>Risk-based vulnerability prioritization</li>
+                            <li>Exploitability assessment and EPSS scoring</li>
+                        </ul>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li>Container and workload vulnerability tracking</li>
+                            <li>Compliance and audit reporting</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Cloud Security Datasets -->
+        <div class="slide" id="slide-5">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">CLOUD SECURITY DATASETS</h2>
+                <div class="info-block">
+                    <h3>Cloud Infrastructure Security Intelligence</h3>
+                    <p>Comprehensive cloud security posture and workload protection data.</p>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">cloud_health_auditing</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Cloud environment auditing</span> - Contains logs related to the health and auditing of your cloud environment, including configuration changes and compliance status.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">cas_policies</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Cloud Application Security policies</span> - Contains policies related to Cloud Application Security / Cortex App Sec (CAS) for application-level protection.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Data Security Posture Management -->
+        <div class="slide" id="slide-6">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">DATA SECURITY POSTURE MANAGEMENT (DSPM)</h2>
+                <div class="info-block">
+                    <h3>Comprehensive Data Discovery and Classification</h3>
+                    <p>DSPM datasets provide detailed insights into your data assets, their structure, and security posture.</p>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div style="font-size: 0.9rem;">
+                        <div style="margin-bottom: 1rem;">
+                            <span class="xql-field">dspm_asset_metadata</span><br>
+                            <small>Metadata for DSPM-managed assets</small>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span class="xql-field">dspm_asset_file_inventory</span><br>
+                            <small>File inventory within DSPM assets</small>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span class="xql-field">dspm_asset_data_patterns</span><br>
+                            <small>Data patterns identified in assets</small>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.9rem;">
+                        <div style="margin-bottom: 1rem;">
+                            <span class="xql-field">dspm_asset_field_inventory</span><br>
+                            <small>Field-level inventory within assets</small>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span class="xql-field">dspm_asset_data_profiles</span><br>
+                            <small>Data profiles for DSPM assets</small>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <span class="xql-field">dspm_asset_table_inventory</span><br>
+                            <small>Table inventory within DSPM assets</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Key Capabilities</h3>
+                    <p>Enable data discovery, classification, privacy compliance, and data loss prevention across cloud and on-premises environments.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Cloud Infrastructure Entitlement Management -->
+        <div class="slide" id="slide-7">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">CLOUD INFRASTRUCTURE ENTITLEMENT MANAGEMENT (CIEM)</h2>
+                <div class="info-block">
+                    <h3>Identity and Access Rights Management</h3>
+                    <p>CIEM datasets provide comprehensive visibility into cloud permissions and access patterns.</p>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">ciem_permissions_raw</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Raw permissions data</span> - Contains comprehensive raw data related to Cloud Infrastructure Entitlement Management permissions across cloud providers.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">ciem_permissions_with_last_access</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Access-enriched permissions</span> - CIEM permissions enhanced with the last access time data for unused permission identification.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">ciem_permissions_creation_time_raw</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Permission lifecycle tracking</span> - Raw creation times for CIEM permissions, enabling permission lifecycle analysis and compliance reporting.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Classification & Compliance -->
+        <div class="slide" id="slide-8">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">CLASSIFICATION & COMPLIANCE DATASETS</h2>
+                <div class="info-block">
+                    <h3>Data Classification and Regulatory Compliance</h3>
+                    <p>Specialized datasets for data classification, compliance management, and audit logging.</p>
+                </div>
+                <div class="grid grid-cols-1">
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">classification_mgmt_data_pattern</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Data pattern classification</span> - Contains data patterns used for automated classification management and sensitive data identification.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">classification_mgmt_data_profile</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">Data profile management</span> - Contains data profiles used for classification management, defining data characteristics and security requirements.</p>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem;">
+                        <div class="info-block" style="text-align: center; padding: 1rem;">
+                            <span class="xql-field" style="font-size: 1.1rem;">prompt_logs</span>
+                        </div>
+                        <div class="info-block">
+                            <p><span class="font-bold">User interaction logging</span> - Contains logs of user prompts and interactions for audit trails and behavior analysis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Dataset Relationships & Joins -->
+        <div class="slide" id="slide-9">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">DATASET RELATIONSHIPS & JOINS</h2>
+                <div class="info-block">
+                    <h3>Understanding Data Connections</h3>
+                    <p>Effective XQL queries often require joining multiple datasets to provide comprehensive security insights.</p>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Common Join Patterns</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-field">findings</span> ← → <span class="xql-field">asset_inventory</span><br><small>Link security findings to specific assets</small></li>
+                            <li><span class="xql-field">uvm_findings</span> ← → <span class="xql-field">asset_inventory</span><br><small>Connect vulnerability data to assets</small></li>
+                            <li><span class="xql-field">issues</span> ← → <span class="xql-field">findings</span><br><small>Group related findings into issues</small></li>
+                            <li><span class="xql-field">cases</span> ← → <span class="xql-field">issues</span><br><small>Organize issues into security cases</small></li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Key Join Fields</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-alias">asset_id</span> - Primary asset identifier</li>
+                            <li><span class="xql-alias">finding_id</span> - Unique finding identifier</li>
+                            <li><span class="xql-alias">issue_id</span> - Issue tracking identifier</li>
+                            <li><span class="xql-alias">case_id</span> - Security case identifier</li>
+                            <li><span class="xql-alias">scan_id</span> - Scan execution identifier</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Pro Tip</h3>
+                    <p>Always use <span class="xql-keyword">LEFT JOIN</span> when some records might not have matches, and consider dataset size for performance optimization.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Best Practices for Dataset Usage -->
+        <div class="slide" id="slide-10">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">BEST PRACTICES FOR DATASET USAGE</h2>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Performance Optimization</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="font-bold">Filter Early</span> - Apply filters before joins</li>
+                            <li><span class="font-bold">Limit Timeframes</span> - Use time-based filtering</li>
+                            <li><span class="font-bold">Select Specific Fields</span> - Avoid SELECT *</li>
+                            <li><span class="font-bold">Use Appropriate Joins</span> - Inner vs Left joins</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Query Design</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="font-bold">Start Small</span> - Test with limited data first</li>
+                            <li><span class="font-bold">Incremental Builds</span> - Add complexity gradually</li>
+                            <li><span class="font-bold">Document Logic</span> - Comment complex queries</li>
+                            <li><span class="font-bold">Error Handling</span> - Plan for missing data</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Security Considerations</h3>
+                    <div class="grid grid-cols-2">
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li>Understand data sensitivity levels</li>
+                            <li>Apply appropriate access controls</li>
+                        </ul>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li>Consider data retention policies</li>
+                            <li>Implement audit logging</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Example: Efficient Multi-Dataset Query</h3>
+                    <pre style="font-size: 0.8rem;"><code><span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">asset_inventory</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">asset_type</span> <span class="xql-operator">=</span> <span class="xql-value">"Container"</span> <span class="comment">// Filter early</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-field">asset_id</span>, <span class="xql-field">asset_name</span> <span class="comment">// Select specific fields</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">join</span> <span class="xql-keyword">type</span> <span class="xql-operator">=</span> <span class="xql-keyword">left</span> (<span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">uvm_findings</span>) <span class="comment">// Use appropriate join</span></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continue with remaining dataset slides... -->
+        
+        <!-- Slide 11: Dataset Summary & Next Steps -->
+        <div class="slide" id="slide-11">
+            <div class="slide-content text-center">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h1 class="text-5xl mb-6">DATASETS OVERVIEW COMPLETE</h1>
+                <div class="info-block">
+                    <h3>You Now Understand</h3>
+                    <div class="grid grid-cols-2">
+                        <div>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li><span class="xql-field">25+ Core Datasets</span> and their specific purposes</li>
+                                <li><span class="font-bold">Data Relationships</span> and join strategies</li>
+                                <li><span class="font-bold">Performance Best Practices</span> for large-scale queries</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li><span class="font-bold">Security Use Cases</span> across domains</li>
+                                <li><span class="font-bold">Cloud Security Integration</span> patterns</li>
+                                <li><span class="font-bold">Real-world Applications</span> and examples</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Next: Practical Application</h3>
+                    <p>Now we'll apply this knowledge to build complex XQL queries that combine multiple datasets for comprehensive security analysis.</p>
+                </div>
+                <p class="text-center text-xl mt-4" style="color: var(--secondary-color);">Ready to build powerful security analytics!</p>
+            </div>
+        </div>
+
+        <!-- Container Image Risk Scoring Slides (Slides 12-29) -->
+        
+        <!-- Slide 12: Title -->
+        <div class="slide" id="slide-12">
+            <div class="slide-content text-center">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h1 class="text-6xl mb-6">BREAKING DOWN A COMPLEX XQL QUERY</h1>
+                <p class="text-xl mb-4">A step-by-step guide to understanding a comprehensive risk-based query.</p>
+                <div class="title-image-container">
+                    <img src="Container Images and Risk Score.png" alt="Container Images and Risk Score diagram" style="width: 100%;">
+                </div>
+                <div class="credit-container">
+                    <p class="text-cyan-400">Query created by: <span class="text-pink-400">Erick Moore</span></p>
+                    <p class="text-cyan-400">Presented by: <span class="text-pink-400">Technical Product Enablement Team</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 1: Agenda -->
+        <div class="slide" id="slide-1">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">AGENDA</h2>
+                <ul>
+                    <li>Core XQL Stages (Part 1)</li>
+                    <li>Core XQL Stages (Part 2)</li>
+                    <li>Essential XQL Functions</li>
+                    <li>Part 1: Initial Data & Filtering</li>
+                    <li>Part 2: Time Grouping & Dashboard Filters</li>
+                    <li>Part 3: Joining with Vulnerability Data & Risk Scores</li>
+                    <li>Part 4: Final Join & Malware Scoring</li>
+                    <li>Your Query Analysis: Malware Risk Enhancement</li>
+                    <li>Complete Query Breakdown & Business Impact</li>
+                    <li>Complete XQL Query</li>
+                    <li>Thank You & Next Steps</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 2: Core Stages (Part 1) -->
+        <div class="slide" id="slide-2">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">CORE XQL STAGES</h2>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Dataset</h3>
+                        <p>Specifies the data source for your query.</p>
+                        <pre><code><span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">asset_inventory</span></code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>Filter</h3>
+                        <p>Narrows down the dataset by applying conditional checks to fields.</p>
+                        <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">xdm.asset.type.category</span> <span class="xql-operator">=</span> <span class="xql-value">"Container Image"</span></code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>Fields</h3>
+                        <p>Selects and renames fields to be included in the output.</p>
+                        <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-field">xdm.asset.name</span> <span class="xql-keyword">as</span> <span class="xql-alias">Name</span></code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>Alter</h3>
+                        <p>Creates new fields or modifies existing ones using expressions.</p>
+                        <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">risk_score</span> <span class="xql-operator">=</span> <span class="xql-value">100</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Core Stages (Part 2) -->
+        <div class="slide" id="slide-3">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">CORE XQL STAGES (CONTINUED)</h2>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Bin</h3>
+                        <p>Groups records into specific time intervals.</p>
+                        <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">bin</span> <span class="xql-field">first_observed</span> <span class="xql-keyword">span</span> <span class="xql-operator">=</span> <span class="xql-value">1D</span></code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>Join</h3>
+                        <p>Combines data from two or more datasets based on a common field.</p>
+                        <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">join</span> (<span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">uvm_findings</span>)</code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>Comp</h3>
+                        <p>Computes aggregate values like counts, sums, or averages.</p>
+                        <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">comp</span> <span class="xql-keyword">count</span>(<span class="xql-field">asset_id</span>) <span class="xql-keyword">as</span> <span class="xql-alias">total_assets</span> <span class="xql-keyword">by</span> <span class="xql-field">asset_type</span></code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>Sort</h3>
+                        <p>Orders the final output in ascending or descending order.</p>
+                        <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">sort</span> <span class="xql-keyword">desc</span> <span class="xql-field">first_seen</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Essential Functions -->
+        <div class="slide" id="slide-4">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">ESSENTIAL FUNCTIONS</h2>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>arrayindex</h3>
+                        <p>Extracts an element from an array based on its index.</p>
+                        <pre><code><span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-keyword">to_string</span>(<span class="xql-field">first_observed</span>), <span class="xql-value">" "</span>), <span class="xql-value">0</span>)</code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>split</h3>
+                        <p>Divides a string into an array of substrings using a delimiter.</p>
+                        <pre><code><span class="xql-keyword">split</span>(<span class="xql-field">cvss_severity</span>, <span class="xql-value">"_"</span>)</code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>to_string / to_number</h3>
+                        <p>Converts data from one type to another.</p>
+                        <pre><code><span class="xql-keyword">to_string</span>(<span class="xql-field">first_observed</span>)</code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>add / multiply / divide</h3>
+                        <p>Performs basic mathematical operations.</p>
+                        <pre><code><span class="xql-keyword">add</span>(<span class="xql-keyword">multiply</span>(<span class="xql-alias">UltraCriticalExploited</span>, <span class="xql-value">100</span>), <span class="xql-keyword">multiply</span>(<span class="xql-alias">UltraHighExploited</span>, <span class="xql-value">50</span>))</code></pre>
+                    </div>
+                    <div class="info-block">
+                        <h3>if</h3>
+                        <p>A conditional function that returns one value if a condition is true, and another if it's false.</p>
+                        <pre><code><span class="xql-keyword">if</span>(<span class="xql-alias">Malware_Count</span> <span class="xql-operator">>=</span> <span class="xql-value">1</span> <span class="xql-keyword">and</span> <span class="xql-alias">risk_score</span> <span class="xql-operator"><</span> <span class="xql-value">90</span>, <span class="xql-value">90</span>, <span class="xql-alias">risk_score</span>)</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Part 1 - Initial Data and Filtering - Tasks -->
+        <div class="slide" id="slide-5">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 1: INITIAL DATA AND FILTERING</h2>
+                <p>We'll begin by selecting our base dataset and preparing it for analysis by filtering and selecting key fields.</p>
+                <h3>Tasks</h3>
+                <ul>
+                    <li><span class="font-bold">Begin the query by specifying the dataset:</span> <span class="xql-field">asset_inventory</span>.</li>
+                    <li><span class="font-bold">Filter the</span> <span class="xql-field">xdm.asset.type.category</span> <span class="font-bold">field to the value</span> <span class="xql-value">'Container Image'</span>.</li>
+                    <li><span class="font-bold">Select and rename</span> <span class="xql-field">xdm.asset.provider</span> <span class="font-bold">to</span> <span class="xql-alias">Cloud</span> <span class="font-bold">and</span> <span class="xql-field">xdm.asset.name</span> <span class="font-bold">to</span> <span class="xql-alias">Name</span>. <span class="font-bold">Keep</span> <span class="xql-field">xdm.asset.first_observed</span>, <span class="font-bold">and</span> <span class="xql-field">xdm.asset.id</span>, <span class="font-bold">and</span> <span class="xql-field">xdm.asset.normalized_fields</span> <span class="font-bold">with their original names.</span></li>
+                    <li><span class="font-bold">Extract the</span> <span class="xql-field">xdm.development_cycle_stages</span> <span class="font-bold">value from the nested</span> <span class="xql-field">xdm.asset.normalized_fields</span> <span class="font-bold">JSON and create a new field named</span> <span class="xql-alias">sdlc</span>.</li>
+                    <li><span class="font-bold">Filter out any results where the</span> <span class="xql-alias">sdlc</span> <span class="font-bold">field is null.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 6: Part 1 Solution -->
+        <div class="slide" id="slide-6">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 1: SOLUTION</h2>
+                <pre><code><span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">asset_inventory</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">xdm.asset.type.category</span> <span class="xql-operator">=</span> <span class="xql-value">"Container Image"</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-field">xdm.asset.provider</span> <span class="xql-keyword">as</span> <span class="xql-alias">Cloud</span>, <span class="xql-field">xdm.asset.name</span> <span class="xql-keyword">as</span> <span class="xql-alias">Name</span>, <span class="xql-field">xdm.asset.first_observed</span> <span class="xql-keyword">as</span> <span class="xql-alias">first_observed</span>, <span class="xql-field">xdm.asset.id</span> <span class="xql-keyword">as</span> <span class="xql-alias">asset_id</span>, <span class="xql-field">xdm.asset.normalized_fields</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">sdlc</span> <span class="xql-operator">=</span> <span class="xql-field">xdm.asset.normalized_fields</span> <span class="xql-operator">-></span> <span class="xql-value">["xdm.development_cycle_stages"][0]</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-alias">sdlc</span> <span class="xql-operator">!=</span> <span class="xql-value">null</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 7: Part 2 - Time Grouping and Dashboard Filtering - Tasks -->
+        <div class="slide" id="slide-7">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 2: TIME GROUPING & DASHBOARD FILTERS</h2>
+                <p>Next, we refine our data for dashboard use by formatting dates and adding dynamic filters.</p>
+                <h3>Tasks</h3>
+                <ul>
+                    <li><span class="font-bold">Aggregate all results that were first observed on the same day into a single group using a</span> <span class="xql-value">1-day span</span>.</li>
+                    <li><span class="font-bold">Transform the full date and timestamp of</span> <span class="xql-field">first_observed</span> <span class="font-bold">into a simplified</span> <span class="xql-value">YYYY-MM-DD</span> <span class="font-bold">format and store it in a new field called</span> <span class="xql-alias">first_seen</span>. (Hint: Use the <span class="xql-keyword">to_string</span>, <span class="xql-keyword">split</span>, and <span class="xql-keyword">arrayindex</span> functions.)</li>
+                    <li><span class="font-bold">Apply dashboard filters to the</span> <span class="xql-alias">first_seen</span> <span class="font-bold">field, using the dynamic value</span> <span class="xql-value">$first_detected</span>, <span class="font-bold">and to the</span> <span class="xql-alias">sdlc</span> <span class="font-bold">field, using the dynamic value</span> <span class="xql-value">$sdlc_stage</span>.</li>
+                    <li><span class="font-bold">Select the final fields to be carried forward:</span> <span class="xql-alias">Name</span>, <span class="xql-alias">first_seen</span>, <span class="xql-alias">sdlc</span>, <span class="font-bold">and</span> <span class="xql-alias">asset_id</span>.</li>
+                    <li><span class="font-bold">Order the results by the</span> <span class="xql-alias">first_seen</span> <span class="font-bold">field in descending order.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 8: Part 2 Solution -->
+        <div class="slide" id="slide-8">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 2: SOLUTION</h2>
+                <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">bin</span> <span class="xql-field">first_observed</span> <span class="xql-keyword">span</span> <span class="xql-operator">=</span> <span class="xql-value">1D</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">first_seen</span> <span class="xql-operator">=</span> <span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-keyword">to_string</span>(<span class="xql-field">first_observed</span>), <span class="xql-value">" "</span>), <span class="xql-value">0</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-alias">first_seen</span> <span class="xql-operator">=</span> <span class="xql-value">$first_detected</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-alias">sdlc</span> <span class="xql-operator">=</span> <span class="xql-value">$sdlc_stage</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-alias">Name</span>, <span class="xql-alias">first_seen</span>, <span class="xql-alias">sdlc</span>, <span class="xql-alias">asset_id</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">sort</span> <span class="xql-keyword">desc</span> <span class="xql-alias">first_seen</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 9: Part 3 - Joining with Vulnerability Data - Tasks -->
+        <div class="slide" id="slide-9">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 3: JOINING WITH VULNERABILITY DATA</h2>
+                <div class="timer-container">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="timer-select-3">Set Time:</label>
+                        <select id="timer-select-3" class="select-timer">
+                            <option value="300">5 min</option>
+                            <option value="600" selected>10 min</option>
+                            <option value="900">15 min</option>
+                        </select>
+                    </div>
+                    <div id="timer-display-3" class="timer-display">10:00</div>
+                    <div class="timer-buttons">
+                        <button id="setBtn-3" class="timer-button">Set</button>
+                        <button id="stopBtn-3" class="timer-button" disabled>Stop</button>
+                        <button id="resumeBtn-3" class="timer-button" disabled>Resume</button>
+                        <button id="resetBtn-3" class="timer-button" disabled>Reset</button>
+                    </div>
+                </div>
+                <p>This is a large, multi-step join operation. We combine our data with vulnerability findings and then calculate a comprehensive risk score.</p>
+                <h3>Tasks</h3>
+                <ul>
+                    <li><span class="font-bold">Begin a</span> <span class="xql-keyword">join</span> <span class="font-bold">with the</span> <span class="xql-field">uvm_findings</span> <span class="font-bold">dataset.</span></li>
+                    <li><span class="font-bold">Within the join, filter</span> <span class="xql-field">asset_category</span> <span class="font-bold">to</span> <span class="xql-value">'Container Image'</span> <span class="font-bold">and select necessary fields.</span></li>
+                    <li><span class="font-bold">Normalize</span> <span class="xql-field">cvss_severity</span> <span class="font-bold">to a simple</span> <span class="xql-alias">severity</span> <span class="font-bold">field.</span></li>
+                    <li><span class="font-bold">Count and classify vulnerabilities by severity and exploitability.</span> Use the comp command to group findings and create separate count fields for each vulnerability category.</li>
+                    <li><span class="font-bold">Calculate weighted temporal scores and final risk scores.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 10: Part 3 Solution -->
+        <div class="slide" id="slide-10">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 3: SOLUTION</h2>
+                <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">join</span> (<span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">uvm_findings</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">asset_category</span> <span class="xql-operator">=</span> <span class="xql-value">"Container Image"</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-field">asset_name</span>, <span class="xql-field">cvss_severity</span>, <span class="xql-field">asset_id</span>, <span class="xql-field">exploitable</span>, <span class="xql-field">exploit_level</span>, <span class="xql-field">epss_score</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-field">cvss_severity</span>, <span class="xql-value">"_"</span>), <span class="xql-value">2</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">comp</span>
+    <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"Critical"</span> <span class="xql-keyword">and</span> <span class="xql-field">exploitable</span> <span class="xql-operator">=</span> <span class="xql-value">true</span> <span class="xql-keyword">and</span> <span class="xql-keyword">to_number</span>(<span class="xql-field">epss_score</span>) <span class="xql-operator">>=</span> <span class="xql-value">0.75</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)) <span class="xql-keyword">as</span> <span class="xql-alias">UltraCriticalExploited</span>,
+    <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"High"</span> <span class="xql-keyword">and</span> <span class="xql-field">exploitable</span> <span class="xql-operator">=</span> <span class="xql-value">true</span> <span class="xql-keyword">and</span> <span class="xql-keyword">to_number</span>(<span class="xql-field">epss_score</span>) <span class="xql-operator">>=</span> <span class="xql-value">0.75</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)) <span class="xql-keyword">as</span> <span class="xql-alias">UltraHighExploited</span>
+<span class="xql-keyword">by</span> <span class="xql-field">asset_name</span>, <span class="xql-field">asset_id</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">temporal_score</span> <span class="xql-operator">=</span> <span class="xql-keyword">add</span>(<span class="xql-keyword">multiply</span>(<span class="xql-alias">UltraCriticalExploited</span>, <span class="xql-value">100</span>), <span class="xql-keyword">multiply</span>(<span class="xql-alias">UltraHighExploited</span>, <span class="xql-value">50</span>))
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">risk_score</span> <span class="xql-operator">=</span> <span class="xql-keyword">round</span>(<span class="xql-keyword">multiply</span>(<span class="xql-value">100</span>, <span class="xql-keyword">divide</span>(<span class="xql-alias">temporal_score</span>, <span class="xql-keyword">add</span>(<span class="xql-alias">temporal_score</span>, <span class="xql-value">100</span>))))
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-alias">risk_score</span> <span class="xql-operator">></span> <span class="xql-value">0</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-alias">risk_score</span>, <span class="xql-field">asset_id</span>
+) <span class="xql-keyword">as</span> <span class="xql-alias">risk</span> <span class="xql-alias">risk.asset_id</span> <span class="xql-operator">=</span> <span class="xql-alias">asset_id</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 11: Part 4 - Final Join and Malware Scoring - Tasks -->
+        <div class="slide" id="slide-11">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 4: FINAL JOIN & MALWARE SCORING</h2>
+                <div class="timer-container">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="timer-select-4">Set Time:</label>
+                        <select id="timer-select-4" class="select-timer">
+                            <option value="300">5 min</option>
+                            <option value="600" selected>10 min</option>
+                            <option value="900">15 min</option>
+                        </select>
+                    </div>
+                    <div id="timer-display-4" class="timer-display">10:00</div>
+                    <div class="timer-buttons">
+                        <button id="setBtn-4" class="timer-button">Set</button>
+                        <button id="stopBtn-4" class="timer-button" disabled>Stop</button>
+                        <button id="resumeBtn-4" class="timer-button" disabled>Resume</button>
+                        <button id="resetBtn-4" class="timer-button" disabled>Reset</button>
+                    </div>
+                </div>
+                <p>Finally, we join with malware findings and make final adjustments to the score.</p>
+                <h3>Tasks</h3>
+                <ul>
+                    <li><span class="font-bold">Perform a</span> <span class="xql-keyword">left join</span> <span class="font-bold">with the</span> <span class="xql-field">findings</span> <span class="font-bold">dataset.</span></li>
+                    <li><span class="font-bold">Filter for malware findings and count them per asset.</span></li>
+                    <li><span class="font-bold">Set the final score: if malware is present and risk_score is under 90, set it to 90.</span></li>
+                    <li><span class="font-bold">Create boolean malware flag and apply dashboard filters.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 12: Part 4 Solution -->
+        <div class="slide" id="slide-12">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 4: SOLUTION</h2>
+                <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">join</span> <span class="xql-keyword">type</span> <span class="xql-operator">=</span> <span class="xql-keyword">left</span> (<span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">findings</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-field">xdm.finding.category</span> <span class="xql-keyword">as</span> <span class="xql-alias">Category</span>, <span class="xql-field">xdm.finding.asset_id</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-alias">Category</span> <span class="xql-keyword">contains</span> <span class="xql-value">"MALWARE"</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">comp</span> <span class="xql-keyword">count</span>(<span class="xql-alias">Category</span>) <span class="xql-keyword">as</span> <span class="xql-alias">Malware_Count</span> <span class="xql-keyword">by</span> <span class="xql-field">xdm.finding.asset_id</span>
+) <span class="xql-keyword">as</span> <span class="xql-alias">findings</span> <span class="xql-alias">findings.xdm.finding.asset_id</span> <span class="xql-operator">=</span> <span class="xql-alias">asset_id</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">score</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(<span class="xql-alias">Malware_Count</span> <span class="xql-operator">>=</span> <span class="xql-value">1</span> <span class="xql-keyword">and</span> <span class="xql-alias">risk_score</span> <span class="xql-operator"><</span> <span class="xql-value">90</span>, <span class="xql-value">90</span>, <span class="xql-alias">risk_score</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">malware</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(<span class="xql-alias">Malware_Count</span> <span class="xql-operator">>=</span> <span class="xql-value">1</span>, <span class="xql-value">"true"</span>, <span class="xql-value">"false"</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-alias">malware</span> <span class="xql-keyword">in</span> (<span class="xql-value">$malware_finding</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-alias">Name</span>, <span class="xql-alias">first_seen</span>, <span class="xql-alias">sdlc</span>, <span class="xql-alias">score</span>, <span class="xql-alias">malware</span>, <span class="xql-alias">asset_id</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 13-16: Continue with remaining slides of first presentation -->
+        <div class="slide" id="slide-13">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">YOUR QUERY ANALYSIS: MALWARE RISK ENHANCEMENT</h2>
+                <div class="timer-container">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="timer-select-5">Set Time:</label>
+                        <select id="timer-select-5" class="select-timer">
+                            <option value="300">5 min</option>
+                            <option value="600" selected>10 min</option>
+                            <option value="900">15 min</option>
+                        </select>
+                    </div>
+                    <div id="timer-display-5" class="timer-display">10:00</div>
+                    <div class="timer-buttons">
+                        <button id="setBtn-5" class="timer-button">Set</button>
+                        <button id="stopBtn-5" class="timer-button" disabled>Stop</button>
+                        <button id="resumeBtn-5" class="timer-button" disabled>Resume</button>
+                        <button id="resetBtn-5" class="timer-button" disabled>Reset</button>
+                    </div>
+                </div>
+                <p>Your query performs a left join with malware findings and enhances the risk scoring system. Let's analyze the key components:</p>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Left Join Strategy</h3>
+                        <p>Preserves all container images, even those without malware findings, ensuring comprehensive coverage.</p>
+                    </div>
+                    <div class="info-block">
+                        <h3>Risk Score Enhancement</h3>
+                        <p>Automatically elevates risk scores to 90 when malware is detected, prioritizing infected assets.</p>
+                    </div>
+                    <div class="info-block">
+                        <h3>Boolean Flag Creation</h3>
+                        <p>Creates clear true/false malware indicators for dashboard filtering and visualization.</p>
+                    </div>
+                    <div class="info-block">
+                        <h3>Dynamic Filtering</h3>
+                        <p>Integrates with dashboard parameters for interactive exploration of malware-affected assets.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-14">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">COMPLETE QUERY BREAKDOWN & BUSINESS IMPACT</h2>
+                <div class="info-block">
+                    <h3>Query Purpose</h3>
+                    <p>This comprehensive query combines asset inventory, vulnerability assessment, and malware detection to provide a holistic risk assessment for container images.</p>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Key Business Benefits</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li>Prioritizes remediation efforts based on risk scores</li>
+                            <li>Ensures malware-infected assets receive immediate attention</li>
+                            <li>Provides visibility into development lifecycle stages</li>
+                            <li>Enables dashboard-driven decision making</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Technical Achievements</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li>Multi-dataset correlation and joining</li>
+                            <li>Complex risk scoring algorithm</li>
+                            <li>Dynamic dashboard parameter integration</li>
+                            <li>Temporal data processing and aggregation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-15">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">COMPLETE XQL QUERY</h2>
+                <div class="info-block">
+                    <h3>Full Query Implementation</h3>
+                    <p>Here's the complete query combining all the components we've analyzed: asset inventory, vulnerability scoring, malware detection, and risk enhancement.</p>
+                </div>
+                <pre style="font-size: 0.7rem;"><code><span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">asset_inventory</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">xdm.asset.type.category</span> <span class="xql-operator">=</span> <span class="xql-value">"Container Image"</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-field">xdm.asset.provider</span> <span class="xql-keyword">as</span> <span class="xql-alias">Cloud</span>, <span class="xql-field">xdm.asset.name</span> <span class="xql-keyword">as</span> <span class="xql-alias">Name</span>, <span class="xql-field">xdm.asset.first_observed</span>, <span class="xql-field">xdm.asset.id</span> <span class="xql-keyword">as</span> <span class="xql-alias">asset_id</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">sdlc</span> <span class="xql-operator">=</span> <span class="xql-field">xdm.asset.normalized_fields</span> <span class="xql-operator">-></span> <span class="xql-value">["xdm.development_cycle_stages"][0]</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">join</span> (<span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">uvm_findings</span> <span class="xql-operator">|</span> <span class="xql-keyword">comp</span> <span class="xql-keyword">count</span>() <span class="xql-keyword">as</span> <span class="xql-alias">vuln_count</span> <span class="xql-keyword">by</span> <span class="xql-field">asset_id</span>) <span class="xql-keyword">as</span> <span class="xql-alias">vulns</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">join</span> <span class="xql-keyword">type</span> <span class="xql-operator">=</span> <span class="xql-keyword">left</span> (<span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">findings</span> <span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">xdm.finding.category</span> <span class="xql-keyword">contains</span> <span class="xql-value">"MALWARE"</span>) <span class="xql-keyword">as</span> <span class="xql-alias">malware</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">final_score</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(<span class="xql-alias">malware</span> <span class="xql-operator">!=</span> <span class="xql-value">null</span>, <span class="xql-value">90</span>, <span class="xql-alias">risk_score</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-alias">Name</span>, <span class="xql-alias">sdlc</span>, <span class="xql-alias">final_score</span>, <span class="xql-alias">asset_id</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 16: Workshop Summary - Container Image Risk Scoring -->
+        <div class="slide" id="slide-16">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">WORKSHOP SUMMARY: CONTAINER IMAGE RISK SCORING</h2>
+                <div class="info-block">
+                    <h3>What You've Accomplished</h3>
+                    <p>You've successfully built a comprehensive container image risk assessment system using advanced XQL techniques.</p>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Technical Skills Mastered</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-keyword">Multi-dataset joins</span> - Connected asset inventory, vulnerability findings, and malware data</li>
+                            <li><span class="xql-keyword">Complex aggregations</span> - Calculated risk scores using vulnerability severity and exploitability</li>
+                            <li><span class="xql-keyword">Temporal processing</span> - Time grouping and date format normalization</li>
+                            <li><span class="xql-keyword">Dynamic filtering</span> - Dashboard parameter integration for interactive analysis</li>
+                            <li><span class="xql-keyword">Conditional logic</span> - Risk score enhancement based on malware presence</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Business Impact Achieved</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="font-bold">Risk Prioritization</span> - Automated scoring from 0-100 for immediate action</li>
+                            <li><span class="font-bold">SDLC Integration</span> - Development lifecycle stage awareness</li>
+                            <li><span class="font-bold">Malware Detection</span> - Critical threat identification and escalation</li>
+                            <li><span class="font-bold">Dashboard Ready</span> - Interactive filtering and visualization support</li>
+                            <li><span class="font-bold">Compliance Support</span> - Comprehensive audit trails and reporting</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Query Architecture Summary</h3>
+                    <div class="grid grid-cols-4" style="font-size: 0.9rem;">
+                        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-color);">
+                            <span class="xql-field">asset_inventory</span><br>
+                            <small>Base container data</small>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-color);">
+                            <span class="xql-field">uvm_findings</span><br>
+                            <small>Vulnerability assessment</small>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-color);">
+                            <span class="xql-field">findings</span><br>
+                            <small>Malware detection</small>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; border: 1px solid var(--border-color);">
+                            <span class="xql-alias">Risk Score</span><br>
+                            <small>Final assessment</small>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-center text-xl mt-4" style="color: var(--secondary-color);">Ready to build production-grade security assessments with XQL!</p>
+            </div>
+        </div>
+
+        <!-- Slide 17: Thank You - First Presentation -->
+        <div class="slide" id="slide-17">
+            <div class="slide-content text-center">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h1 class="text-5xl mb-6">THANK YOU</h1>
+                <div class="grid grid-cols-1">
+                    <div class="info-block">
+                        <h3>Session Complete - Container Image Risk Scoring</h3>
+                        <p>You've successfully learned how to build complex XQL queries with multiple joins, risk scoring algorithms, and malware detection integration.</p>
+                    </div>
+                    <div class="grid grid-cols-2">
+                        <div class="info-block">
+                            <h3>Key Skills Acquired</h3>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Multi-dataset joins and correlations</li>
+                                <li>Complex aggregation and scoring</li>
+                                <li>Risk-based conditional logic</li>
+                                <li>Dashboard parameter integration</li>
+                            </ul>
+                        </div>
+                        <div class="info-block">
+                            <h3>Next Steps</h3>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Practice with your own datasets</li>
+                                <li>Explore advanced XQL functions</li>
+                                <li>Build custom risk models</li>
+                                <li>Create interactive dashboards</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Third Presentation: Kubernetes Pods with Vulnerabilities (Slides 18-30) -->
+        
+        <!-- Slide 18: Kubernetes Presentation Title -->
+        <div class="slide" id="slide-18">
+            <div class="slide-content text-center">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h1 class="text-6xl mb-6">KUBERNETES VULNERABILITY ANALYSIS</h1>
+                <p class="text-xl mb-4">Advanced XQL techniques for runtime Kubernetes security assessment</p>
+                <div class="title-image-container">
+                    <img src="2025-09-04_11-47-39.png" alt="Kubernetes Namespaces with Vulnerabilities diagram" style="width: 100%;">
+                </div>
+                <div class="credit-container">
+                    <p class="text-cyan-400">Query created by: <span class="text-pink-400">Erick Moore</span></p>
+                    <p class="text-cyan-400">Presented by: <span class="text-pink-400">Technical Product Enablement Team</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 19: Kubernetes Workshop Agenda -->
+        <div class="slide" id="slide-19">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">KUBERNETES ANALYSIS AGENDA</h2>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Core Concepts</h3>
+                        <ul class="list-disc list-inside">
+                            <li>Kubernetes Runtime Data Sources</li>
+                            <li>Pod-to-Image Correlation Techniques</li>
+                            <li>Advanced XQL Join Operations</li>
+                            <li>Runtime Context Enrichment</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Hands-on Workshop</h3>
+                        <ul class="list-disc list-inside">
+                            <li>Part 1: Kubernetes Workload Discovery</li>
+                            <li>Part 2: Image Vulnerability Correlation</li>
+                            <li>Part 3: Risk Scoring & Prioritization</li>
+                            <li>Part 4: Complete Analysis Solution</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block mt-4">
+                    <h3>Learning Objectives</h3>
+                    <p>Master advanced XQL techniques for analyzing Kubernetes environments, correlating runtime workloads with vulnerability data, and building comprehensive security assessments.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 20: Kubernetes Data Sources -->
+        <div class="slide" id="slide-20">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">KUBERNETES DATA SOURCES</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="info-block">
+                        <h3>Runtime Workload Data</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-field">xdr_data</span> - Live Kubernetes workloads</li>
+                            <li><span class="xql-field">action_k8s_workload</span> - Pod runtime information</li>
+                            <li><span class="xql-field">k8s_container_name</span> - Container identification</li>
+                            <li><span class="xql-field">k8s_namespace</span> - Namespace context</li>
+                            <li><span class="xql-field">k8s_pod_name</span> - Pod identification</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Image Vulnerability Data</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-field">cloud_resource_metadata</span> - Image metadata</li>
+                            <li><span class="xql-field">container_image_name</span> - Image references</li>
+                            <li><span class="xql-field">container_vulnerabilities</span> - CVE data</li>
+                            <li><span class="xql-field">cvss_severity</span> - Risk classifications</li>
+                            <li><span class="xql-field">exploitability_score</span> - Threat intelligence</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Key Challenge: Correlation Complexity</h3>
+                    <p>Kubernetes environments present unique challenges for security analysis - runtime workloads must be correlated with static image vulnerability data, requiring sophisticated join operations and data normalization techniques.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 21: Part 1 - Kubernetes Workload Discovery Tasks -->
+        <div class="slide" id="slide-21">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 1: KUBERNETES WORKLOAD DISCOVERY</h2>
+                <p>Start by discovering and cataloging all active Kubernetes workloads in your environment.</p>
+                <h3>Tasks</h3>
+                <ul>
+                    <li><span class="font-bold">Query the</span> <span class="xql-field">xdr_data</span> <span class="font-bold">dataset and filter for Kubernetes workload actions using</span> <span class="xql-value">action_k8s_workload = "WORKLOAD_STARTED"</span>.</li>
+                    <li><span class="font-bold">Extract essential workload metadata:</span> <span class="xql-field">k8s_namespace</span>, <span class="xql-field">k8s_pod_name</span>, <span class="xql-field">k8s_container_name</span>, <span class="font-bold">and</span> <span class="xql-field">container_image_name</span>.</li>
+                    <li><span class="font-bold">Create a normalized image reference by removing registry prefixes and tags. Store this in a field called</span> <span class="xql-alias">normalized_image</span>.</li>
+                    <li><span class="font-bold">Filter for workloads from the last</span> <span class="xql-value">7 days</span> <span class="font-bold">using the</span> <span class="xql-field">_time</span> <span class="font-bold">field.</span></li>
+                    <li><span class="font-bold">Group results by unique combinations of namespace, pod, and image to avoid duplicates.</span></li>
+                </ul>
+                <div class="info-block mt-4">
+                    <h3>Success Criteria</h3>
+                    <p>Your query should return a distinct list of active Kubernetes workloads with clean image references ready for vulnerability correlation.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 22: Part 1 - Kubernetes Workload Discovery Solution -->
+        <div class="slide" id="slide-22">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 1: SOLUTION</h2>
+                <pre><code><span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">xdr_data</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">action_k8s_workload</span> <span class="xql-operator">=</span> <span class="xql-value">"WORKLOAD_STARTED"</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">_time</span> <span class="xql-operator">></span> <span class="xql-keyword">current_time</span>() <span class="xql-operator">-</span> <span class="xql-value">7d</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">normalized_image</span> <span class="xql-operator">=</span> <span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-field">container_image_name</span>, <span class="xql-value">"/"</span>), <span class="xql-operator">-</span><span class="xql-value">1</span>), <span class="xql-value">":"</span>), <span class="xql-value">0</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">fields</span> <span class="xql-field">k8s_namespace</span>, <span class="xql-field">k8s_pod_name</span>, <span class="xql-field">k8s_container_name</span>, <span class="xql-field">container_image_name</span>, <span class="xql-alias">normalized_image</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">dedup</span> <span class="xql-field">k8s_namespace</span>, <span class="xql-field">k8s_pod_name</span>, <span class="xql-alias">normalized_image</span></code></pre>
+                <div class="info-block mt-4">
+                    <h3>Key Techniques</h3>
+                    <ul style="list-style: disc; padding-left: 2rem;">
+                        <li><span class="xql-keyword">Nested string manipulation</span> to clean image names</li>
+                        <li><span class="xql-keyword">Time-based filtering</span> for recent workloads</li>
+                        <li><span class="xql-keyword">Deduplication</span> to ensure unique workload records</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 23: Part 2 - Image Vulnerability Correlation Tasks -->
+        <div class="slide" id="slide-23">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 2: IMAGE VULNERABILITY CORRELATION</h2>
+                <p>Now correlate your active workloads with vulnerability data to identify security risks.</p>
+                <h3>Tasks</h3>
+                <ul>
+                    <li><span class="font-bold">Join your workload data with the</span> <span class="xql-field">cloud_resource_metadata</span> <span class="font-bold">dataset using</span> <span class="xql-alias">normalized_image</span> <span class="font-bold">and</span> <span class="xql-field">container_image_name</span>.</li>
+                    <li><span class="font-bold">Further join with</span> <span class="xql-field">container_vulnerabilities</span> <span class="font-bold">using the</span> <span class="xql-field">asset_id</span> <span class="font-bold">field.</span></li>
+                    <li><span class="font-bold">Extract vulnerability severity information and create severity counters:</span> <span class="xql-alias">Critical</span>, <span class="xql-alias">High</span>, <span class="xql-alias">Medium</span>, <span class="font-bold">and</span> <span class="xql-alias">Low</span>.</li>
+                    <li><span class="font-bold">Calculate exploitable vulnerability counts using the</span> <span class="xql-field">exploitability_score</span> <span class="font-bold">field (score > 0.1).</span></li>
+                    <li><span class="font-bold">Group results by workload (namespace, pod, container) to aggregate vulnerability data per running workload.</span></li>
+                </ul>
+                <div class="info-block mt-4">
+                    <h3>Success Criteria</h3>
+                    <p>Each active Kubernetes workload should be enriched with comprehensive vulnerability counts and exploitability metrics.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 24: Part 2 - Image Vulnerability Correlation Solution -->
+        <div class="slide" id="slide-24">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 2: SOLUTION</h2>
+                <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">join</span> <span class="xql-keyword">type</span> <span class="xql-operator">=</span> <span class="xql-value">left</span> (
+    <span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">cloud_resource_metadata</span>
+    <span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">cloud_provider</span> <span class="xql-operator">=</span> <span class="xql-value">"containers"</span>
+    <span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">image_match</span> <span class="xql-operator">=</span> <span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-field">container_image_name</span>, <span class="xql-value">"/"</span>), <span class="xql-operator">-</span><span class="xql-value">1</span>), <span class="xql-value">":"</span>), <span class="xql-value">0</span>)
+) <span class="xql-keyword">as</span> <span class="xql-alias">img_meta</span> <span class="xql-keyword">on</span> <span class="xql-alias">normalized_image</span> <span class="xql-operator">=</span> <span class="xql-alias">img_meta</span>.<span class="xql-alias">image_match</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">join</span> <span class="xql-keyword">type</span> <span class="xql-operator">=</span> <span class="xql-value">left</span> (
+    <span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">container_vulnerabilities</span>
+    <span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-keyword">uppercase</span>(<span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-field">cvss_severity</span>, <span class="xql-value">"_"</span>), <span class="xql-value">0</span>))
+    <span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">is_exploitable</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(<span class="xql-field">exploitability_score</span> <span class="xql-operator">></span> <span class="xql-value">0.1</span>, <span class="xql-value">1</span>, <span class="xql-value">0</span>)
+) <span class="xql-keyword">as</span> <span class="xql-alias">vuln</span> <span class="xql-keyword">on</span> <span class="xql-alias">img_meta</span>.<span class="xql-field">asset_id</span> <span class="xql-operator">=</span> <span class="xql-alias">vuln</span>.<span class="xql-field">asset_id</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">comp</span> <span class="xql-alias">Critical</span> <span class="xql-operator">=</span> <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"CRITICAL"</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)),
+     <span class="xql-alias">High</span> <span class="xql-operator">=</span> <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"HIGH"</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)),
+     <span class="xql-alias">Exploitable</span> <span class="xql-operator">=</span> <span class="xql-keyword">sum</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">is_exploitable</span>)
+     <span class="xql-keyword">by</span> <span class="xql-field">k8s_namespace</span>, <span class="xql-field">k8s_pod_name</span>, <span class="xql-field">k8s_container_name</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 25: Part 3 - Risk Scoring and Prioritization Tasks -->
+        <div class="slide" id="slide-25">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 3: RISK SCORING & PRIORITIZATION</h2>
+                <p>Create a comprehensive risk scoring system for your Kubernetes workloads based on vulnerability data and runtime context.</p>
+                <h3>Tasks</h3>
+                <ul>
+                    <li><span class="font-bold">Calculate a</span> <span class="xql-alias">base_risk_score</span> <span class="font-bold">using weighted vulnerability counts: Critical (×4), High (×2), Medium (×1), Low (×0.5).</span></li>
+                    <li><span class="font-bold">Apply an exploitability multiplier: if exploitable vulnerabilities > 0, multiply base score by</span> <span class="xql-value">1.5</span>.</li>
+                    <li><span class="font-bold">Add runtime context bonuses:</span>
+                        <ul style="list-style: disc; margin-left: 2rem;">
+                            <li><span class="font-bold">Privileged namespaces (kube-system, kube-public): +20 points</span></li>
+                            <li><span class="font-bold">Production-like namespaces (prod, production): +15 points</span></li>
+                        </ul>
+                    </li>
+                    <li><span class="font-bold">Normalize the final</span> <span class="xql-alias">risk_score</span> <span class="font-bold">to a 0-100 scale and create risk categories: High (≥80), Medium (50-79), Low (<50).</span></li>
+                    <li><span class="font-bold">Sort results by risk score (descending) to prioritize the most critical workloads.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 26: Part 3 - Risk Scoring and Prioritization Solution -->
+        <div class="slide" id="slide-26">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">PART 3: SOLUTION</h2>
+                <pre><code><span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">base_risk_score</span> <span class="xql-operator">=</span> <span class="xql-keyword">add</span>(
+    <span class="xql-keyword">multiply</span>(<span class="xql-alias">Critical</span>, <span class="xql-value">4</span>),
+    <span class="xql-keyword">multiply</span>(<span class="xql-alias">High</span>, <span class="xql-value">2</span>),
+    <span class="xql-keyword">multiply</span>(<span class="xql-alias">Medium</span>, <span class="xql-value">1</span>),
+    <span class="xql-keyword">multiply</span>(<span class="xql-alias">Low</span>, <span class="xql-value">0.5</span>)
+)
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">exploitability_bonus</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(<span class="xql-alias">Exploitable</span> <span class="xql-operator">></span> <span class="xql-value">0</span>, <span class="xql-keyword">multiply</span>(<span class="xql-alias">base_risk_score</span>, <span class="xql-value">0.5</span>), <span class="xql-value">0</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">namespace_bonus</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(
+    <span class="xql-field">k8s_namespace</span> <span class="xql-keyword">in</span> (<span class="xql-value">"kube-system"</span>, <span class="xql-value">"kube-public"</span>), <span class="xql-value">20</span>,
+    <span class="xql-keyword">if</span>(<span class="xql-field">k8s_namespace</span> <span class="xql-keyword">contains</span> <span class="xql-value">"prod"</span>, <span class="xql-value">15</span>, <span class="xql-value">0</span>)
+)
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">total_score</span> <span class="xql-operator">=</span> <span class="xql-keyword">add</span>(<span class="xql-alias">base_risk_score</span>, <span class="xql-alias">exploitability_bonus</span>, <span class="xql-alias">namespace_bonus</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">risk_score</span> <span class="xql-operator">=</span> <span class="xql-keyword">min</span>(<span class="xql-keyword">divide</span>(<span class="xql-keyword">multiply</span>(<span class="xql-alias">total_score</span>, <span class="xql-value">100</span>), <span class="xql-value">50</span>), <span class="xql-value">100</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">risk_category</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(
+    <span class="xql-alias">risk_score</span> <span class="xql-operator">>=</span> <span class="xql-value">80</span>, <span class="xql-value">"High"</span>,
+    <span class="xql-keyword">if</span>(<span class="xql-alias">risk_score</span> <span class="xql-operator">>=</span> <span class="xql-value">50</span>, <span class="xql-value">"Medium"</span>, <span class="xql-value">"Low"</span>)
+)
+<span class="xql-operator">|</span> <span class="xql-keyword">sort</span> <span class="xql-keyword">desc</span> <span class="xql-alias">risk_score</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 27: Part 4 - Complete Analysis Solution -->
+        <div class="slide" id="slide-27">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">COMPLETE KUBERNETES VULNERABILITY ANALYSIS</h2>
+                <pre><code><span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">xdr_data</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">action_k8s_workload</span> <span class="xql-operator">=</span> <span class="xql-value">"WORKLOAD_STARTED"</span> <span class="xql-keyword">and</span> <span class="xql-field">_time</span> <span class="xql-operator">></span> <span class="xql-keyword">current_time</span>() <span class="xql-operator">-</span> <span class="xql-value">7d</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">normalized_image</span> <span class="xql-operator">=</span> <span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-field">container_image_name</span>, <span class="xql-value">"/"</span>), <span class="xql-operator">-</span><span class="xql-value">1</span>), <span class="xql-value">":"</span>), <span class="xql-value">0</span>)
+<span class="xql-operator">|</span> <span class="xql-keyword">dedup</span> <span class="xql-field">k8s_namespace</span>, <span class="xql-field">k8s_pod_name</span>, <span class="xql-alias">normalized_image</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">join</span> <span class="xql-keyword">type</span> <span class="xql-operator">=</span> <span class="xql-value">left</span> (
+    <span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">cloud_resource_metadata</span> <span class="xql-operator">|</span> <span class="xql-keyword">filter</span> <span class="xql-field">cloud_provider</span> <span class="xql-operator">=</span> <span class="xql-value">"containers"</span>
+    <span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">image_match</span> <span class="xql-operator">=</span> <span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-field">container_image_name</span>, <span class="xql-value">"/"</span>), <span class="xql-operator">-</span><span class="xql-value">1</span>), <span class="xql-value">":"</span>), <span class="xql-value">0</span>)
+) <span class="xql-keyword">as</span> <span class="xql-alias">img</span> <span class="xql-keyword">on</span> <span class="xql-alias">normalized_image</span> <span class="xql-operator">=</span> <span class="xql-alias">img</span>.<span class="xql-alias">image_match</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">join</span> <span class="xql-keyword">type</span> <span class="xql-operator">=</span> <span class="xql-value">left</span> (
+    <span class="xql-keyword">dataset</span> <span class="xql-operator">=</span> <span class="xql-field">container_vulnerabilities</span>
+    <span class="xql-operator">|</span> <span class="xql-keyword">alter</span> <span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-keyword">uppercase</span>(<span class="xql-keyword">arrayindex</span>(<span class="xql-keyword">split</span>(<span class="xql-field">cvss_severity</span>, <span class="xql-value">"_"</span>), <span class="xql-value">0</span>)),
+           <span class="xql-alias">is_exploitable</span> <span class="xql-operator">=</span> <span class="xql-keyword">if</span>(<span class="xql-field">exploitability_score</span> <span class="xql-operator">></span> <span class="xql-value">0.1</span>, <span class="xql-value">1</span>, <span class="xql-value">0</span>)
+) <span class="xql-keyword">as</span> <span class="xql-alias">vuln</span> <span class="xql-keyword">on</span> <span class="xql-alias">img</span>.<span class="xql-field">asset_id</span> <span class="xql-operator">=</span> <span class="xql-alias">vuln</span>.<span class="xql-field">asset_id</span>
+<span class="xql-operator">|</span> <span class="xql-keyword">comp</span> <span class="xql-alias">Critical</span> <span class="xql-operator">=</span> <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"CRITICAL"</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)),
+     <span class="xql-alias">High</span> <span class="xql-operator">=</span> <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"HIGH"</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)),
+     <span class="xql-alias">Medium</span> <span class="xql-operator">=</span> <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"MEDIUM"</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)),
+     <span class="xql-alias">Low</span> <span class="xql-operator">=</span> <span class="xql-keyword">count</span>(<span class="xql-keyword">if</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">severity</span> <span class="xql-operator">=</span> <span class="xql-value">"LOW"</span>, <span class="xql-value">1</span>, <span class="xql-value">null</span>)),
+     <span class="xql-alias">Exploitable</span> <span class="xql-operator">=</span> <span class="xql-keyword">sum</span>(<span class="xql-alias">vuln</span>.<span class="xql-alias">is_exploitable</span>)
+     <span class="xql-keyword">by</span> <span class="xql-field">k8s_namespace</span>, <span class="xql-field">k8s_pod_name</span>, <span class="xql-field">k8s_container_name</span>, <span class="xql-alias">normalized_image</span></code></pre>
+            </div>
+        </div>
+
+        <!-- Slide 28: Advanced Kubernetes Security Techniques -->
+        <div class="slide" id="slide-28">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">ADVANCED KUBERNETES SECURITY TECHNIQUES</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="info-block">
+                        <h3>Runtime Behavior Analysis</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-keyword">Network activity correlation</span> - Pod communication patterns</li>
+                            <li><span class="xql-keyword">Process monitoring</span> - Runtime command execution</li>
+                            <li><span class="xql-keyword">File system changes</span> - Container modifications</li>
+                            <li><span class="xql-keyword">Resource utilization</span> - Anomaly detection</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Compliance Integration</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-keyword">CIS Kubernetes Benchmark</span> - Configuration assessment</li>
+                            <li><span class="xql-keyword">Pod Security Standards</span> - Policy enforcement</li>
+                            <li><span class="xql-keyword">RBAC analysis</span> - Permission review</li>
+                            <li><span class="xql-keyword">Secret management</span> - Credential security</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Production Implementation Tips</h3>
+                    <ul style="list-style: disc; padding-left: 2rem;">
+                        <li><span class="font-bold">Automated alerting</span> on high-risk workloads discovered</li>
+                        <li><span class="font-bold">Dashboard integration</span> with real-time filtering capabilities</li>
+                        <li><span class="font-bold">Scheduled reporting</span> for security team review processes</li>
+                        <li><span class="font-bold">Integration with CI/CD</span> for shift-left security practices</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 29: Kubernetes Analysis Business Impact -->
+        <div class="slide" id="slide-29">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">BUSINESS IMPACT & OPERATIONAL VALUE</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="info-block">
+                        <h3>Security Improvements</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="font-bold">Runtime visibility</span> - Real-time workload assessment</li>
+                            <li><span class="font-bold">Risk prioritization</span> - Focus on active threats</li>
+                            <li><span class="font-bold">Automated discovery</span> - Continuous environment scanning</li>
+                            <li><span class="font-bold">Context-aware scoring</span> - Intelligent risk calculation</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Operational Efficiency</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="font-bold">Reduced false positives</span> - Focus on running workloads</li>
+                            <li><span class="font-bold">Scalable analysis</span> - Handles enterprise environments</li>
+                            <li><span class="font-bold">Automated remediation</span> - Triggered response workflows</li>
+                            <li><span class="font-bold">Compliance reporting</span> - Audit-ready documentation</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Strategic Value</h3>
+                    <p>This Kubernetes vulnerability analysis capability transforms reactive security operations into proactive, intelligence-driven risk management, enabling organizations to maintain security posture at scale while supporting DevOps velocity.</p>
+                </div>
+                <p class="text-center text-xl mt-4" style="color: var(--secondary-color);">Advanced Kubernetes security mastery achieved!</p>
+            </div>
+        </div>
+
+        <!-- Slide 30: Thank You - Kubernetes Presentation -->
+        <div class="slide" id="slide-30">
+            <div class="slide-content text-center">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h1 class="text-5xl mb-6">KUBERNETES WORKSHOP COMPLETE</h1>
+                <div class="grid grid-cols-1">
+                    <div class="info-block">
+                        <h3>Kubernetes Security Expertise Achieved</h3>
+                        <p>You've successfully mastered advanced Kubernetes vulnerability analysis through sophisticated XQL query techniques and runtime security assessment.</p>
+                    </div>
+                    <div class="grid grid-cols-2">
+                        <div class="info-block">
+                            <h3>Advanced Skills Mastered</h3>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Runtime workload discovery and correlation</li>
+                                <li>Complex multi-dataset join operations</li>
+                                <li>Context-aware risk scoring algorithms</li>
+                                <li>Production-scale security automation</li>
+                            </ul>
+                        </div>
+                        <div class="info-block">
+                            <h3>Next Steps</h3>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Implement in your Kubernetes environment</li>
+                                <li>Customize risk scoring for your context</li>
+                                <li>Integrate with alerting and remediation</li>
+                                <li>Explore advanced runtime analysis</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Slide 31: Workshop Summary - Kubernetes Analysis -->
+        <div class="slide" id="slide-31">
+            <div class="slide-content">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h2 class="text-3xl">WORKSHOP SUMMARY: KUBERNETES VULNERABILITY ANALYSIS</h2>
+                <div class="info-block">
+                    <h3>What You've Accomplished</h3>
+                    <p>You've successfully built a comprehensive Kubernetes workload security assessment system that correlates runtime and vulnerability data.</p>
+                </div>
+                <div class="grid grid-cols-2">
+                    <div class="info-block">
+                        <h3>Advanced XQL Techniques Mastered</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="xql-keyword">Runtime Data Analysis</span> - Kubernetes workload discovery</li>
+                            <li><span class="xql-keyword">Image Correlation</span> - Linking pods to vulnerable images</li>
+                            <li><span class="xql-keyword">Complex Normalization</span> - Data standardization</li>
+                            <li><span class="xql-keyword">Risk Prioritization</span> - Context-aware scoring</li>
+                        </ul>
+                    </div>
+                    <div class="info-block">
+                        <h3>Operational Impact Delivered</h3>
+                        <ul style="list-style: disc; padding-left: 2rem;">
+                            <li><span class="font-bold">Runtime Visibility</span> - Real-time workload assessment</li>
+                            <li><span class="font-bold">Risk Context</span> - Vulnerability impact prioritization</li>
+                            <li><span class="font-bold">Response Focus</span> - Active workload protection</li>
+                            <li><span class="font-bold">Scale Management</span> - Efficient large-scale analysis</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="text-center text-xl mt-4" style="color: var(--secondary-color);">Expert-level Kubernetes security monitoring achieved!</p>
+            </div>
+        </div>
+
+        <!-- Slide 32: Final Thank You -->
+        <div class="slide" id="slide-32">
+            <div class="slide-content text-center">
+                <div class="logos-container">
+                    <img src="PANW_Parent_Brand_Primary_Logo_RGB_Red_White.png" alt="Palo Alto Networks Logo" class="logo">
+                    <img src="cortex-primary-reversed.png" alt="Cortex Logo" class="logo">
+                </div>
+                <h1 class="text-5xl mb-6">SESSION COMPLETE</h1>
+                <div class="grid grid-cols-1">
+                    <div class="info-block">
+                        <h3>Combined Learning Objectives Achieved</h3>
+                        <p>You've mastered both container image risk scoring and Kubernetes security analysis through comprehensive XQL techniques.</p>
+                    </div>
+                    <div class="grid grid-cols-2">
+                        <div class="info-block">
+                            <h3>Container Security Expertise</h3>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Multi-stage vulnerability assessment</li>
+                                <li>Risk-based scoring algorithms</li>
+                                <li>Malware detection integration</li>
+                                <li>SDLC stage awareness</li>
+                            </ul>
+                        </div>
+                        <div class="info-block">
+                            <h3>Kubernetes Security Skills</h3>
+                            <ul style="list-style: disc; padding-left: 2rem; text-align: left;">
+                                <li>Runtime workload analysis</li>
+                                <li>Container-to-vulnerability correlation</li>
+                                <li>Context-aware risk assessment</li>
+                                <li>Production-scale optimization</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Ready for Enterprise Security Operations</h3>
+                    <p>Apply these patterns to build comprehensive security monitoring and risk assessment solutions in your environments.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        
+        // Timer slides configuration
+        const timerSlides = {
+            13: { id: 'c1', title: 'Container Images: Part 1 - Initial Data and Filtering' },
+            15: { id: 'c2', title: 'Container Images: Part 2 - Time Grouping & Dashboard Filtering' },
+            17: { id: 'c3', title: 'Container Images: Part 3 - Joining with Vulnerability Data' },
+            19: { id: 'c4', title: 'Container Images: Part 4 - Final Join & Malware Scoring' },
+            21: { id: 'c5', title: 'Container Images: Your Query Analysis - Malware Risk Enhancement' },
+            23: { id: 'k1', title: 'Kubernetes: Part 1 - Workload Discovery' },
+            25: { id: 'k2', title: 'Kubernetes: Part 2 - Image Vulnerability Correlation' },
+            27: { id: 'k3', title: 'Kubernetes: Part 3 - Risk Scoring & Prioritization' }
+        };
+        
+        const timers = {};
+        
+        function showTimerForSlide(slideIndex) {
+            const timerSidebar = document.getElementById('timer-sidebar');
+            const content = document.querySelector('.content');
+            const timerContent = document.getElementById('timer-content');
+            
+            if (timerSlides[slideIndex]) {
+                const timerInfo = timerSlides[slideIndex];
+                timerSidebar.classList.add('active');
+                content.classList.add('with-timer');
+                
+                // Create timer HTML
+                timerContent.innerHTML = `
+                    <div class="timer-section">
+                        <h4 style="color: var(--secondary-color); margin-bottom: 1rem; font-size: 1rem; text-align: center;">${timerInfo.title}</h4>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                            <label for="timer-select-${timerInfo.id}" style="color: var(--text-bright); font-size: 0.9rem;">Set Time:</label>
+                            <select id="timer-select-${timerInfo.id}" class="select-timer">
+                                <option value="300">5 min</option>
+                                <option value="600" selected>10 min</option>
+                                <option value="900">15 min</option>
+                            </select>
+                        </div>
+                        <div id="timer-display-${timerInfo.id}" class="timer-display" style="text-align: center; font-size: 2rem; margin-bottom: 1rem; color: #00ffff;">10:00</div>
+                        <div class="timer-buttons" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <button id="setBtn-${timerInfo.id}" class="timer-button">Set Timer</button>
+                            <button id="stopBtn-${timerInfo.id}" class="timer-button" disabled>Stop</button>
+                            <button id="resumeBtn-${timerInfo.id}" class="timer-button" disabled>Resume</button>
+                            <button id="resetBtn-${timerInfo.id}" class="timer-button" disabled>Reset</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Initialize timer for this slide
+                setTimeout(() => {
+                    if (!timers[timerInfo.id]) {
+                        timers[timerInfo.id] = initializeTimer(timerInfo.id);
+                    }
+                }, 100);
+            } else {
+                timerSidebar.classList.remove('active');
+                content.classList.remove('with-timer');
+                timerContent.innerHTML = '';
+            }
+        }
+        
+        function initializeTimer(timerId) {
+            const timer = {
+                timeLeft: 600,
+                isRunning: false,
+                intervalId: null,
+                display: document.getElementById(`timer-display-${timerId}`),
+                selectElement: document.getElementById(`timer-select-${timerId}`),
+                setBtn: document.getElementById(`setBtn-${timerId}`),
+                stopBtn: document.getElementById(`stopBtn-${timerId}`),
+                resumeBtn: document.getElementById(`resumeBtn-${timerId}`),
+                resetBtn: document.getElementById(`resetBtn-${timerId}`)
+            };
+            
+            if (!timer.display) return null;
+            
+            function updateDisplay() {
+                const minutes = Math.floor(timer.timeLeft / 60);
+                const seconds = timer.timeLeft % 60;
+                timer.display.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timer.timeLeft <= 60) {
+                    timer.display.style.color = '#ff0080';
+                } else if (timer.timeLeft <= 180) {
+                    timer.display.style.color = '#ffff00';
+                } else {
+                    timer.display.style.color = '#00ffff';
+                }
+            }
+            
+            function startTimer() {
+                if (!timer.isRunning && timer.timeLeft > 0) {
+                    timer.isRunning = true;
+                    timer.intervalId = setInterval(() => {
+                        timer.timeLeft--;
+                        updateDisplay();
+                        
+                        if (timer.timeLeft <= 0) {
+                            stopTimer();
+                            timer.display.textContent = 'TIME UP!';
+                            timer.display.style.color = '#ff0080';
+                        }
+                    }, 1000);
+                    
+                    timer.setBtn.disabled = true;
+                    timer.stopBtn.disabled = false;
+                    timer.resumeBtn.disabled = true;
+                }
+            }
+            
+            function stopTimer() {
+                timer.isRunning = false;
+                if (timer.intervalId) {
+                    clearInterval(timer.intervalId);
+                    timer.intervalId = null;
+                }
+                
+                timer.setBtn.disabled = false;
+                timer.stopBtn.disabled = true;
+                timer.resumeBtn.disabled = false;
+                timer.resetBtn.disabled = false;
+            }
+            
+            function resetTimer() {
+                stopTimer();
+                timer.timeLeft = parseInt(timer.selectElement.value);
+                updateDisplay();
+                timer.resetBtn.disabled = true;
+                timer.resumeBtn.disabled = true;
+            }
+            
+            timer.setBtn.addEventListener('click', () => {
+                timer.timeLeft = parseInt(timer.selectElement.value);
+                updateDisplay();
+                startTimer();
+            });
+            
+            timer.stopBtn.addEventListener('click', stopTimer);
+            timer.resumeBtn.addEventListener('click', startTimer);
+            timer.resetBtn.addEventListener('click', resetTimer);
+            
+            updateDisplay();
+            return timer;
+        }
+
+        // Menu functionality
+        document.querySelectorAll('.menu-category').forEach(category => {
+            category.querySelector('.category-header').addEventListener('click', () => {
+                category.classList.toggle('open');
+            });
+        });
+
+        // Slide navigation
+        document.querySelectorAll('.submenu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const slideIndex = parseInt(item.getAttribute('data-slide'));
+                showSlide(slideIndex);
+                
+                // Update active menu item
+                document.querySelectorAll('.submenu-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        function showSlide(index) {
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                }
+            });
+            currentSlide = index;
+            
+            // Show timer sidebar if slide has timer
+            showTimerForSlide(index);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const totalSlides = document.querySelectorAll('.slide').length;
+            if (e.key === 'ArrowLeft' && currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            } else if (e.key === 'ArrowRight' && currentSlide < totalSlides - 1) {
+                showSlide(currentSlide + 1);
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            showSlide(0);
+        });
+    </script>
+</body>
+</html>
